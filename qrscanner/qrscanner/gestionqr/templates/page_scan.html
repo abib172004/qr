@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scan QR</title>
+  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+</head>
+<body>
+  <h2 id="salutation">🔍 Identification...</h2>
+
+  <div id="formulaire" style="display:none;">
+    <input type="text" id="nom" placeholder="Ton prénom">
+    <button onclick="enregistrerNom()">S'enregistrer</button>
+  </div>
+
+  <script>
+    const fpPromise = FingerprintJS.load();
+
+    fpPromise.then(fp => fp.get()).then(resultat => {
+      const identifiant = resultat.visitorId;
+
+      fetch('/verifier/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifiant })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.nom) {
+          document.getElementById("salutation").innerText = `👋 Bonjour ${data.nom} !`;
+        } else {
+          document.getElementById("formulaire").style.display = "block";
+        }
+      });
+
+      window.enregistrerNom = function () {
+        const nom = document.getElementById("nom").value;
+        fetch('/enregistrer/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifiant, nom })
+        })
+        .then(() => {
+          document.getElementById("salutation").innerText = `Merci ${nom}, tu es enregistré 🎉`;
+          document.getElementById("formulaire").style.display = "none";
+        });
+      }
+    });
+  </script>
+</body>
+</html>
